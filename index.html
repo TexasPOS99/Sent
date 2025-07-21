@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ส่งข้อความ - แชร์ลิงก์และข้อความ</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">📨 ส่งข้อความ</h1>
+            <p class="subtitle">แชร์ลิงก์และข้อความกับผู้อื่น</p>
+        </header>
+
+        <main class="main">
+            <!-- Message Input Section -->
+            <section class="input-section">
+                <div class="input-container">
+                    <textarea 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="พิมพ์ข้อความหรือลิงก์ที่ต้องการแชร์..."
+                        rows="4"
+                    ></textarea>
+                    <button id="sendButton" class="send-button">
+                        <span class="button-text">ส่งข้อความ</span>
+                        <div class="loading-spinner hidden"></div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Messages History Section -->
+            <section class="messages-section">
+                <div class="section-header">
+                    <h2 class="section-title">ข้อความล่าสุด</h2>
+                    <div id="loadingIndicator" class="loading-indicator">
+                        <div class="loading-spinner"></div>
+                        <span>กำลังโหลด...</span>
+                    </div>
+                </div>
+                <div id="messagesList" class="messages-list">
+                    <!-- Messages will be rendered here -->
+                </div>
+                <div id="emptyState" class="empty-state hidden">
+                    <div class="empty-icon">💬</div>
+                    <p>ยังไม่มีข้อความ</p>
+                    <p class="empty-subtitle">เริ่มต้นด้วยการส่งข้อความแรกของคุณ</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast hidden">
+            <span class="toast-icon">✅</span>
+            <span class="toast-message">คัดลอกแล้ว!</span>
+        </div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+</html>
