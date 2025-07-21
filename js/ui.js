@@ -5,16 +5,30 @@ class UIManager {
     this.elements = {
       messageInput: document.getElementById('messageInput'),
       sendButton: document.getElementById('sendButton'),
+      clearButton: document.getElementById('clearButton'),
+      refreshButton: document.getElementById('refreshButton'),
       messagesList: document.getElementById('messagesList'),
       loadingIndicator: document.getElementById('loadingIndicator'),
       emptyState: document.getElementById('emptyState'),
-      toast: document.getElementById('toast')
+      toast: document.getElementById('toast'),
+      charCount: document.getElementById('charCount'),
+      maxChars: document.getElementById('maxChars'),
+      messageCount: document.getElementById('messageCount'),
+      connectionStatus: document.getElementById('connectionStatus')
     };
     
     this.isLoading = false;
     this.isSending = false;
+    this.messageCount = 0;
     
     this.initializeEventListeners();
+    this.initializeUI();
+  }
+
+  // Initialize UI elements
+  initializeUI() {
+    this.elements.maxChars.textContent = appConfig.maxMessageLength;
+    this.updateCharacterCount();
   }
 
   // Initialize event listeners
@@ -22,6 +36,17 @@ class UIManager {
     // Send button click
     this.elements.sendButton.addEventListener('click', () => {
       this.handleSendMessage();
+    });
+
+    // Clear button click
+    this.elements.clearButton.addEventListener('click', () => {
+      this.clearInput();
+    });
+
+    // Refresh button click
+    this.elements.refreshButton.addEventListener('click', () => {
+      const event = new CustomEvent('refreshMessages');
+      document.dispatchEvent(event);
     });
 
     // Enter key in textarea (Ctrl+Enter to send)
@@ -32,9 +57,15 @@ class UIManager {
       }
     });
 
-    // Auto-resize textarea
+    // Auto-resize textarea and update character count
     this.elements.messageInput.addEventListener('input', () => {
       this.autoResizeTextarea();
+      this.updateCharacterCount();
+    });
+
+    // Focus input on page load
+    window.addEventListener('load', () => {
+      this.elements.messageInput.focus();
     });
   }
 
@@ -44,6 +75,7 @@ class UIManager {
     
     if (!text) {
       this.showToast('กรุณาพิมพ์ข้อความ', 'error');
+      this.elements.messageInput.focus();
       return;
     }
 
@@ -57,11 +89,28 @@ class UIManager {
     document.dispatchEvent(event);
   }
 
+  // Update character count
+  updateCharacterCount() {
+    const currentLength = this.elements.messageInput.value.length;
+    this.elements.charCount.textContent = currentLength;
+    
+    // Change color based on character count
+    const percentage = currentLength / appConfig.maxMessageLength;
+    if (percentage > 0.9) {
+      this.elements.charCount.style.color = '#ef4444';
+    } else if (percentage > 0.7) {
+      this.elements.charCount.style.color = '#f59e0b';
+    } else {
+      this.elements.charCount.style.color = '#718096';
+    }
+  }
+
   // Auto-resize textarea based on content
   autoResizeTextarea() {
     const textarea = this.elements.messageInput;
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+    const newHeight = Math.min(Math.max(textarea.scrollHeight, 140), 300);
+    textarea.style.height = newHeight + 'px';
   }
 
   // Show loading state
@@ -81,23 +130,47 @@ class UIManager {
   showSending() {
     this.isSending = true;
     this.elements.sendButton.disabled = true;
-    this.elements.sendButton.querySelector('.button-text').textContent = 'กำลังส่ง...';
+    this.elements.sendButton.querySelector('.button-text').textContent = '📤 กำลังส่ง...';
     this.elements.sendButton.querySelector('.loading-spinner').classList.remove('hidden');
+    this.elements.clearButton.disabled = true;
   }
 
   // Hide sending state
   hideSending() {
     this.isSending = false;
     this.elements.sendButton.disabled = false;
-    this.elements.sendButton.querySelector('.button-text').textContent = 'ส่งข้อความ';
+    this.elements.sendButton.querySelector('.button-text').textContent = '📤 ส่งข้อความ';
     this.elements.sendButton.querySelector('.loading-spinner').classList.add('hidden');
+    this.elements.clearButton.disabled = false;
   }
 
   // Clear message input
   clearInput() {
     this.elements.messageInput.value = '';
     this.autoResizeTextarea();
+    this.updateCharacterCount();
     this.elements.messageInput.focus();
+    this.showToast('ล้างข้อความแล้ว', 'info');
+  }
+
+  // Update message count
+  updateMessageCount(count) {
+    this.messageCount = count;
+    this.elements.messageCount.querySelector('.stat-number').textContent = count.toLocaleString('th-TH');
+  }
+
+  // Update connection status
+  updateConnectionStatus(isConnected) {
+    const statusIndicator = this.elements.connectionStatus.querySelector('.status-indicator');
+    const statusText = this.elements.connectionStatus.querySelector('.status-text');
+    
+    if (isConnected) {
+      statusIndicator.classList.remove('disconnected');
+      statusText.textContent = 'เชื่อมต่อแล้ว';
+    } else {
+      statusIndicator.classList.add('disconnected');
+      statusText.textContent = 'ขาดการเชื่อมต่อ';
+    }
   }
 
   // Render messages list
@@ -107,10 +180,12 @@ class UIManager {
     if (!messages || messages.length === 0) {
       this.elements.messagesList.innerHTML = '';
       this.elements.emptyState.classList.remove('hidden');
+      this.updateMessageCount(0);
       return;
     }
 
     this.elements.emptyState.classList.add('hidden');
+    this.updateMessageCount(messages.length);
     
     const messagesHTML = messages.map(message => this.createMessageHTML(message)).join('');
     this.elements.messagesList.innerHTML = messagesHTML;
@@ -130,12 +205,17 @@ class UIManager {
     const newMessageElement = this.elements.messagesList.firstElementChild;
     const copyButton = newMessageElement.querySelector('.copy-button');
     this.attachCopyButtonListener(copyButton, message.text);
+    
+    // Update message count
+    this.messageCount++;
+    this.updateMessageCount(this.messageCount);
   }
 
   // Create HTML for a single message
   createMessageHTML(message) {
     const formattedTime = this.formatTime(message.created_at);
     const messageText = this.escapeHtml(message.text);
+    const isUrl = this.isValidUrl(message.text);
     
     return `
       <div class="message-item" data-id="${message.id}">
@@ -145,9 +225,25 @@ class UIManager {
             📋 คัดลอก
           </button>
         </div>
-        <div class="message-text">${messageText}</div>
+        <div class="message-text">${isUrl ? this.linkifyText(messageText) : messageText}</div>
       </div>
     `;
+  }
+
+  // Check if text is a valid URL
+  isValidUrl(text) {
+    try {
+      const url = new URL(text.trim());
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  // Convert URLs to clickable links
+  linkifyText(text) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #667eea; text-decoration: underline;">$1</a>');
   }
 
   // Attach event listeners to all copy buttons
@@ -164,7 +260,18 @@ class UIManager {
     button.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(text);
-        this.showToast('คัดลอกแล้ว!');
+        this.showToast('คัดลอกแล้ว! 📋');
+        
+        // Visual feedback
+        const originalText = button.textContent;
+        button.textContent = '✅ คัดลอกแล้ว';
+        button.style.background = '#10b981';
+        
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.style.background = '#667eea';
+        }, 1500);
+        
       } catch (error) {
         console.error('Failed to copy text:', error);
         // Fallback for older browsers
@@ -186,7 +293,7 @@ class UIManager {
     
     try {
       document.execCommand('copy');
-      this.showToast('คัดลอกแล้ว!');
+      this.showToast('คัดลอกแล้ว! 📋');
     } catch (error) {
       console.error('Fallback copy failed:', error);
       this.showToast('ไม่สามารถคัดลอกได้', 'error');
@@ -203,12 +310,23 @@ class UIManager {
     
     // Set message and icon based on type
     toastMessage.textContent = message;
-    if (type === 'error') {
-      toastIcon.textContent = '❌';
-      toast.style.background = '#ef4444';
-    } else {
-      toastIcon.textContent = '✅';
-      toast.style.background = '#10b981';
+    
+    switch (type) {
+      case 'error':
+        toastIcon.textContent = '❌';
+        toast.style.background = '#ef4444';
+        break;
+      case 'warning':
+        toastIcon.textContent = '⚠️';
+        toast.style.background = '#f59e0b';
+        break;
+      case 'info':
+        toastIcon.textContent = 'ℹ️';
+        toast.style.background = '#3b82f6';
+        break;
+      default:
+        toastIcon.textContent = '✅';
+        toast.style.background = '#10b981';
     }
     
     // Show toast
@@ -233,6 +351,9 @@ class UIManager {
     } else if (diffInMinutes < 1440) { // Less than 24 hours
       const hours = Math.floor(diffInMinutes / 60);
       return `${hours} ชั่วโมงที่แล้ว`;
+    } else if (diffInMinutes < 10080) { // Less than 7 days
+      const days = Math.floor(diffInMinutes / 1440);
+      return `${days} วันที่แล้ว`;
     } else {
       // Show full date for older messages
       return date.toLocaleDateString('th-TH', {
@@ -257,9 +378,26 @@ class UIManager {
     this.showToast(message, 'error');
   }
 
+  // Show success message
+  showSuccess(message) {
+    this.showToast(message, 'success');
+  }
+
   // Get current input value
   getInputValue() {
     return this.elements.messageInput.value.trim();
+  }
+
+  // Set input value
+  setInputValue(value) {
+    this.elements.messageInput.value = value;
+    this.autoResizeTextarea();
+    this.updateCharacterCount();
+  }
+
+  // Focus input
+  focusInput() {
+    this.elements.messageInput.focus();
   }
 }
 

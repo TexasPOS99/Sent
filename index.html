@@ -8,55 +8,109 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📨</text></svg>">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1 class="title">📨 ส่งข้อความ</h1>
-            <p class="subtitle">แชร์ลิงก์และข้อความกับผู้อื่น</p>
+            <div class="header-content">
+                <h1 class="title">📨 ส่งข้อความ</h1>
+                <p class="subtitle">แชร์ลิงก์และข้อความกับผู้อื่นได้อย่างง่ายดาย</p>
+                <div class="stats">
+                    <span id="messageCount" class="stat-item">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">ข้อความทั้งหมด</span>
+                    </span>
+                </div>
+            </div>
         </header>
 
         <main class="main">
             <!-- Message Input Section -->
             <section class="input-section">
                 <div class="input-container">
+                    <div class="input-header">
+                        <h2>✍️ เขียนข้อความใหม่</h2>
+                        <div class="character-count">
+                            <span id="charCount">0</span>/<span id="maxChars">2000</span>
+                        </div>
+                    </div>
                     <textarea 
                         id="messageInput" 
                         class="message-input" 
-                        placeholder="พิมพ์ข้อความหรือลิงก์ที่ต้องการแชร์..."
+                        placeholder="พิมพ์ข้อความ ลิงก์ หรือสิ่งที่ต้องการแชร์ที่นี่...&#10;&#10;💡 เคล็ดลับ: กด Ctrl+Enter เพื่อส่งข้อความได้เลย"
                         rows="4"
+                        maxlength="2000"
                     ></textarea>
-                    <button id="sendButton" class="send-button">
-                        <span class="button-text">ส่งข้อความ</span>
-                        <div class="loading-spinner hidden"></div>
-                    </button>
+                    <div class="input-actions">
+                        <button id="clearButton" class="clear-button">
+                            🗑️ ล้างข้อความ
+                        </button>
+                        <button id="sendButton" class="send-button">
+                            <span class="button-text">📤 ส่งข้อความ</span>
+                            <div class="loading-spinner hidden"></div>
+                        </button>
+                    </div>
                 </div>
             </section>
 
             <!-- Messages History Section -->
             <section class="messages-section">
                 <div class="section-header">
-                    <h2 class="section-title">ข้อความล่าสุด</h2>
-                    <div id="loadingIndicator" class="loading-indicator">
-                        <div class="loading-spinner"></div>
-                        <span>กำลังโหลด...</span>
+                    <h2 class="section-title">📋 ข้อความล่าสุด</h2>
+                    <div class="header-actions">
+                        <button id="refreshButton" class="refresh-button">
+                            🔄 รีเฟรช
+                        </button>
+                        <div id="loadingIndicator" class="loading-indicator hidden">
+                            <div class="loading-spinner"></div>
+                            <span>กำลังโหลด...</span>
+                        </div>
                     </div>
                 </div>
-                <div id="messagesList" class="messages-list">
-                    <!-- Messages will be rendered here -->
-                </div>
-                <div id="emptyState" class="empty-state hidden">
-                    <div class="empty-icon">💬</div>
-                    <p>ยังไม่มีข้อความ</p>
-                    <p class="empty-subtitle">เริ่มต้นด้วยการส่งข้อความแรกของคุณ</p>
+                
+                <div class="messages-container">
+                    <div id="messagesList" class="messages-list">
+                        <!-- Messages will be rendered here -->
+                    </div>
+                    
+                    <div id="emptyState" class="empty-state">
+                        <div class="empty-content">
+                            <div class="empty-icon">💬</div>
+                            <h3>ยังไม่มีข้อความ</h3>
+                            <p>เริ่มต้นด้วยการส่งข้อความแรกของคุณ</p>
+                            <div class="empty-features">
+                                <div class="feature-item">
+                                    <span class="feature-icon">🔗</span>
+                                    <span>แชร์ลิงก์</span>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">📝</span>
+                                    <span>ส่งข้อความ</span>
+                                </div>
+                                <div class="feature-item">
+                                    <span class="feature-icon">📋</span>
+                                    <span>คัดลอกง่าย</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
 
-        <!-- Toast Notification -->
+        <!-- Toast Notifications -->
         <div id="toast" class="toast hidden">
-            <span class="toast-icon">✅</span>
-            <span class="toast-message">คัดลอกแล้ว!</span>
+            <div class="toast-content">
+                <span class="toast-icon">✅</span>
+                <span class="toast-message">คัดลอกแล้ว!</span>
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div id="connectionStatus" class="connection-status">
+            <div class="status-indicator"></div>
+            <span class="status-text">เชื่อมต่อแล้ว</span>
         </div>
     </div>
 
